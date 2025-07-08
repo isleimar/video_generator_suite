@@ -34,8 +34,7 @@ class Resolver:
     def _get_node_name(self, owner_name: str, attr: str) -> str:
         return f"{owner_name}.{attr}"
 
-    def _build_dependency_graph(self):
-        # (Este método permanece o mesmo da versão anterior)
+    def _build_dependency_graph(self):        
         all_elements = {el.name: el for el in self.resolved_project.elements if el.name}
         attributes_to_scan: List[Tuple[str, object, str]] = []
         for attr in ['width', 'height', 'duration']:
@@ -56,8 +55,7 @@ class Resolver:
                 self.graph.add(node_name)
                 self.resolved_values[node_name] = value
 
-    def _find_dependencies(self, expression: str, current_element_name: str) -> Set[str]:
-        # (Este método permanece o mesmo da versão anterior)
+    def _find_dependencies(self, expression: str, current_element_name: str) -> Set[str]:        
         raw_refs = self.ref_pattern.findall(expression)
         dependencies = set()
         safe_functions = {'max', 'min'}

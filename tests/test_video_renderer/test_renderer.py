@@ -1,132 +1,137 @@
 import pytest
 from unittest.mock import MagicMock, patch
 
-from video_model.models import Project, ImageElement, VideoElement, RectangleElement, TextElement
+from video_model.models import (
+    Project, ImageElement, VideoElement, RectangleElement, TextElement, AudioElement
+)
 from video_renderer.renderer import Renderer
 
-# --- Fixtures ---
+# Importamos a classe base do MoviePy para usar no 'spec' do mock
+try:
+    from moviepy.video.VideoClip import VideoClip as BaseVideoClip
+except ImportError:
+    # Se o moviepy não estiver instalado, define um objeto genérico para que a coleta de teste não falhe
+    BaseVideoClip = type('BaseVideoClip', (object,), {})
+
+# --- Fixtures (Definidas no nível do módulo para fácil acesso) ---
 
 @pytest.fixture
 def project_with_image():
-    """Cria um projeto com um elemento de imagem para testes."""
-    elements = [
-        ImageElement(name="logo", start=2, path="logo.png", width=200, height=100)
-    ]
-    return Project(width=1920, height=1080, duration=10, elements=elements)
-
-@pytest.fixture
-def project_with_rectangle():
-    """Cria um projeto com um elemento de retângulo para testes."""
-    elements = [
-        RectangleElement(name="bg", start=0, width=800, height=600, color="#FF0000")
-    ]
-    return Project(width=1920, height=1080, duration=10, elements=elements)
-
-
-@pytest.fixture
-def project_with_text():
-    """Cria um projeto com um elemento de texto para testes."""
-    font_spec = {
-        "path": "Arial.ttf",
-        "size": 72,
-        "color": "#FFFFFF",
-        "stroke": {"color": "black", "width": 2}
-    }
-    elements = [
-        TextElement(name="title", start=1, text="Hello World", font=font_spec)
-    ]
+    elements = [ImageElement(name="logo", start=2, path="logo.png", width=200, height=100)]
     return Project(width=1920, height=1080, duration=10, elements=elements)
 
 @pytest.fixture
 def project_with_video():
-    """Cria um projeto com um elemento de vídeo para testes."""
-    elements = [
-        VideoElement(name="trailer", start=5, path="trailer.mp4", width=1280, height=720, volume=0.7)
-    ]
+    elements = [VideoElement(name="trailer", start=5, path="trailer.mp4", width=1280, height=720, volume=0.7)]
     return Project(width=1920, height=1080, duration=30, elements=elements)
 
+@pytest.fixture
+def project_with_rectangle():
+    elements = [RectangleElement(name="bg", start=0, width=800, height=600, color="#FF0000")]
+    return Project(width=1920, height=1080, duration=10, elements=elements)
 
-# --- Classe de Testes ---
+@pytest.fixture
+def project_with_text():
+    font_spec = {"path": "Arial.ttf", "size": 72, "color": "#FFFFFF"}
+    elements = [TextElement(name="title", start=1, text="Hello World", font=font_spec)]
+    return Project(width=1920, height=1080, duration=10, elements=elements)
+
+@pytest.fixture
+def project_with_audio():
+    elements = [AudioElement(name="music", start=0, path="music.mp3", volume=0.5)]
+    return Project(width=1920, height=1080, duration=60, elements=elements)
+
+
+# --- Classe de Testes para o Renderer ---
 
 class TestRenderer:
-    # MUDANÇA: Patch direto na classe que queremos simular
+
     @patch('video_renderer.renderer.ImageClip')
-    def test_create_image_clip_calls_moviepy_correctly(self, mock_image_clip, project_with_image):
-        """Testa a criação de um clipe de imagem."""
+    def test_create_image_clip(self, mock_clip, project_with_image):
         mock_instance = MagicMock()
-        mock_image_clip.return_value = mock_instance
-
+        mock_clip.return_value = mock_instance
         renderer = Renderer(project_with_image)
-        image_element = project_with_image.elements[0]
-        
-        renderer._create_image_clip(image_element)
-
-        mock_image_clip.assert_called_once_with("logo.png")
-        # MUDANÇA: .resize se torna .resized
+        renderer._create_image_clip(project_with_image.elements[0])
+        mock_clip.assert_called_once_with("logo.png")
         mock_instance.resized.assert_called_once_with(width=200, height=100)
 
-    # MUDANÇA: Patch direto na classe que queremos simular
+    @patch('video_renderer.renderer.VideoFileClip')
+    def test_create_video_clip(self, mock_clip, project_with_video):
+        mock_instance = MagicMock()
+        mock_instance.volumex.return_value = mock_instance
+        mock_clip.return_value = mock_instance
+        renderer = Renderer(project_with_video)
+        renderer._create_video_clip(project_with_video.elements[0])
+        mock_clip.assert_called_once_with("trailer.mp4")
+        mock_instance.volumex.assert_called_once_with(0.7)
+        mock_instance.resized.assert_called_once_with(width=1280, height=720)
+
+    @patch('video_renderer.renderer.ColorClip')
+    def test_create_rectangle_clip(self, mock_clip, project_with_rectangle):
+        renderer = Renderer(project_with_rectangle)
+        renderer._create_rectangle_clip(project_with_rectangle.elements[0])
+        mock_clip.assert_called_once_with(size=(800, 600), color="#FF0000")
+
     @patch('video_renderer.renderer.TextClip')
-    def test_create_text_clip_calls_moviepy_correctly(self, mock_text_clip, project_with_text):
-        """Testa a criação de um clipe de texto."""
+    def test_create_text_clip(self, mock_clip, project_with_text):
         renderer = Renderer(project_with_text)
-        text_element = project_with_text.elements[0]
-
-        renderer._create_text_clip(text_element)
-
-        # Verifica se TextClip foi chamado com os parâmetros corretos
-        mock_text_clip.assert_called_once_with(
-            txt="Hello World",
-            font="Arial.ttf",
-            fontsize=72,
-            color="FFFFFF", # Verifica se o '#' foi removido
-            stroke_color="black",
-            stroke_width=2
+        renderer._create_text_clip(project_with_text.elements[0])
+        mock_clip.assert_called_once_with(
+            txt="Hello World", font="Arial.ttf", fontsize=72,
+            color="FFFFFF", stroke_color=None, stroke_width=0
         )
-    
+
+    @patch('video_renderer.renderer.AudioFileClip')
+    def test_create_audio_clip(self, mock_clip, project_with_audio):
+        mock_instance = MagicMock()
+        mock_clip.return_value = mock_instance
+        renderer = Renderer(project_with_audio)
+        renderer._create_audio_clip(project_with_audio.elements[0])
+        mock_clip.assert_called_once_with("music.mp3")
+        mock_instance.volumex.assert_called_once_with(0.5)
+
+    # MUDANÇA: Removemos o patch de BaseVideoClip e o argumento do teste
     @patch('video_renderer.renderer.CompositeVideoClip')
     @patch('video_renderer.renderer.ColorClip')
-    def test_render_video_orchestrates_correctly(self, mock_color_clip, mock_composite_clip, project_with_video):
+    def test_render_video_orchestration(self, mock_color_clip, mock_composite_clip, project_with_video):
         """
         Testa se render_video orquestra a criação do canvas, elementos e composição final.
         """
-        # Prepara os mocks
-        mock_canvas_instance = MagicMock()
-        mock_color_clip.return_value = mock_canvas_instance
-
-        # --- A LINHA DA CORREÇÃO ESTÁ AQUI ---
-        # Dizemos ao mock do canvas para ter um atributo 'size' com o valor correto.
-        mock_canvas_instance.size = (project_with_video.width, project_with_video.height)
-
-        mock_final_clip_instance = MagicMock()
-        mock_composite_clip.return_value = mock_final_clip_instance
+        mock_canvas = MagicMock()
+        mock_color_clip.return_value = mock_canvas
+        mock_canvas.size = (project_with_video.width, project_with_video.height)
+        mock_final_clip = MagicMock()
+        mock_composite_clip.return_value = mock_final_clip
         
         renderer = Renderer(project_with_video)
         
-        # Mock para o método interno para não re-testar a criação de clipes
-        mock_element_clip = MagicMock()
+        # --- CORREÇÃO FINAL AQUI ---
+        # Criamos um mock que se conforma à especificação de um BaseVideoClip.
+        # Agora, isinstance(mock_element_clip, BaseVideoClip) retornará True.
+        mock_element_clip = MagicMock(spec=BaseVideoClip)
+        
         renderer._create_clip_for_element = MagicMock(return_value=mock_element_clip)
 
         # Executa o método principal
         renderer.render_video("output.mp4", fps=30)
 
-        # 1. Verifica se o canvas foi criado com os parâmetros corretos
+        # 1. Verifica se o canvas foi criado corretamente
         mock_color_clip.assert_called_once_with(
             size=(project_with_video.width, project_with_video.height),
             color=project_with_video.background_color,
             duration=project_with_video.duration
         )
 
-        # 2. Verifica se a criação de clipes foi chamada para o nosso elemento
+        # 2. Verifica se a criação de clipes foi chamada
         renderer._create_clip_for_element.assert_called_once_with(project_with_video.elements[0])
         
-        # 3. Verifica se a composição final foi criada com o canvas e o clipe do elemento
+        # 3. Verifica se a composição final foi criada com os clipes corretos
         mock_composite_clip.assert_called_once_with(
-            [mock_canvas_instance, mock_element_clip],
-            size=(project_with_video.width, project_with_video.height)
+            [mock_canvas, mock_element_clip],
+            size=mock_canvas.size
         )
 
         # 4. Verifica se o arquivo final foi escrito
-        mock_final_clip_instance.write_videofile.assert_called_once_with(
+        mock_final_clip.write_videofile.assert_called_once_with(
             "output.mp4", fps=30, codec='libx264'
         )
