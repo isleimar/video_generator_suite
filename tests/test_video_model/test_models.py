@@ -11,11 +11,12 @@ class TestElementInstantiation:
 
     def test_image_element_creation_with_all_args(self):
         """Testa se um ImageElement pode ser criado com argumentos posicionais e nomeados."""
+        # CORREÇÃO: Removemos o argumento 'type' da chamada
         img = ImageElement(
             name="logo",
             start=5,
-            type="image",
             path="images/logo.png",
+            # Argumentos nomeados (keyword-only)
             end=15,
             x=100,
             opacity=0.8
@@ -26,16 +27,18 @@ class TestElementInstantiation:
         assert img.end == 15
         assert img.x == 100
         assert img.opacity == 0.8
+        # Testa se o tipo foi atribuído corretamente pela classe
+        assert img.type == "image"
         # Testa se um valor padrão não especificado está correto
         assert img.y == 0
 
     def test_rectangle_element_uses_defaults(self):
         """Testa se um RectangleElement usa seus valores padrão corretamente."""
+        # CORREÇÃO: Removemos o argumento 'type' da chamada
         rect = RectangleElement(
             name="background",
             start=0,
-            type="rectangle", # 'type' é posicional
-            # Todos os outros são nomeados
+            # Argumentos nomeados (keyword-only)
             end=10
         )
         assert rect.color == "#FFFFFF"

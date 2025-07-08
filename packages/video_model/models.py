@@ -28,38 +28,38 @@ class BaseElement:
 class ImageElement(BaseElement):
     # 'path' se torna um argumento apenas-nomeado por causa da herança
     path: str
-    type: str = "image"
-
+    type: str = field(default="image", init=False)
+    
 @dataclass
 class VideoElement(BaseElement):
     path: str
-    type: str = "video"
+    type: str = field(default="video", init=False)
     volume: DynamicValue = 1.0
     loop: bool = False
 
 @dataclass
 class AudioElement(BaseElement):
-    path: str
-    type: str = "audio"
+    path: str    
+    type: str = field(default="audio", init=False)
     volume: DynamicValue = 1.0
     loop: bool = False
 
 @dataclass
 class RectangleElement(BaseElement):
-    type: str = "rectangle"
+    type: str = field(default="rectangle", init=False)    
     color: str = "#FFFFFF"
     corner_radius: int = 0
 
 @dataclass
 class TextElement(BaseElement):
     text: str
-    type: str = "text"
+    type: str = field(default="text", init=False)    
     font: Dict[str, Any] = field(default_factory=dict)
 
 @dataclass
 class SubtitleElement(BaseElement):
-    path: str
-    type: str = "subtitles"
+    path: str    
+    type: str = field(default="subtitles", init=False)
     font: Dict[str, Any] = field(default_factory=dict)
 
 @dataclass
@@ -79,12 +79,16 @@ class Project:
         }
         element_objects = []
         for el_data in data.get("elements", []):
-            el_type_str = el_data.get("type")
+            el_type_str = el_data.pop("type", None)
+            
             if not el_type_str or el_type_str not in ELEMENT_TYPE_MAP:
                 raise ValueError(f"Tipo de elemento desconhecido ou não especificado: {el_type_str}")
             
             ElementClass = ELEMENT_TYPE_MAP[el_type_str]
             element_objects.append(ElementClass(**el_data))
         
-        project_data = {k: v for k, v in data.items() if k != "elements"}
+        project_data = {k: v for k, v in data.items() if k != "elements"}        
+        
+        project_data['elements'] = element_objects
+        
         return cls(**project_data)
