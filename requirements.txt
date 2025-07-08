@@ -10,3 +10,4 @@ moviepy
 # Para testes
 pytest
 pytest-mock
+pytest-cov

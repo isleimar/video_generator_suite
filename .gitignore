@@ -1,4 +1,11 @@
 
+# Coverage reports
+.coverage
+coverage.*
+htmlcov/
+*.cover
+coverage.xml
+
 # Bytecode e cache Python
 __pycache__/
 *.py[cod]

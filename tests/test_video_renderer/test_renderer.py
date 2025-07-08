@@ -1,71 +1,61 @@
 import pytest
 from unittest.mock import MagicMock, patch
 
-from video_model.models import Project, ImageElement
+from video_model.models import Project, ImageElement, VideoElement, RectangleElement
 from video_renderer.renderer import Renderer
 
+# --- Fixtures ---
+
 @pytest.fixture
-def resolved_project():
-    """Cria um objeto de projeto simples e já resolvido para os testes."""
+def project_with_image():
+    """Cria um projeto com um elemento de imagem para testes."""
     elements = [
-        ImageElement(
-            # Argumentos posicionais
-            name="logo",
-            start=2,
-            # CORREÇÃO: O argumento 'type' foi removido desta chamada
-            
-            # Argumentos apenas-nomeados (keyword-only)
-            path="logo.png",
-            end=8,
-            x=100,
-            y=150,
-            width=200,
-            height=100
-        )
+        ImageElement(name="logo", start=2, path="logo.png", width=200, height=100)
     ]
     return Project(width=1920, height=1080, duration=10, elements=elements)
 
+@pytest.fixture
+def project_with_video():
+    """Cria um projeto com um elemento de vídeo para testes."""
+    elements = [
+        VideoElement(name="trailer", start=5, path="trailer.mp4", width=1280, height=720, volume=0.7)
+    ]
+    return Project(width=1920, height=1080, duration=30, elements=elements)
 
-@patch('video_renderer.renderer.mp') # Simula todo o módulo moviepy.editor
-def test_renderer_initialization(mock_mp, resolved_project):
-    """Testa se o renderizador é inicializado corretamente."""
-    renderer = Renderer(resolved_project)
-    assert renderer.project == resolved_project
 
-@patch('video_renderer.renderer.mp')
-def test_render_video_calls_composition_and_write(mock_mp, resolved_project):
-    """
-    Testa se o método render_video chama as funções corretas do MoviePy.
-    (Este teste está como placeholder e vai passar sem fazer nada por enquanto)
-    """
-    # Configura os mocks para não fazer nada, mas registrar que foram chamados
-    mock_composite = MagicMock()
-    mock_mp.CompositeVideoClip.return_value = mock_composite
-    
-    renderer = Renderer(resolved_project)
-    # A lógica principal do teste está comentada pois a implementação não foi feita
-    pass
+# --- Classe de Testes ---
 
-@patch('video_renderer.renderer.mp') # Simula todo o módulo moviepy.editor
-def test_create_image_clip_calls_moviepy_correctly(mock_mp, resolved_project):
-    """
-    Testa se o método _create_image_clip chama as funções do MoviePy com os argumentos corretos.
-    """
-    mock_image_clip_instance = MagicMock()
-    mock_mp.ImageClip.return_value = mock_image_clip_instance
+class TestRenderer:
+    # MUDANÇA: Patch direto na classe que queremos simular
+    @patch('video_renderer.renderer.ImageClip')
+    def test_create_image_clip_calls_moviepy_correctly(self, mock_image_clip, project_with_image):
+        """Testa a criação de um clipe de imagem."""
+        mock_instance = MagicMock()
+        mock_image_clip.return_value = mock_instance
 
-    renderer = Renderer(resolved_project)
-    image_element = resolved_project.elements[0]
-    
-    # Executa o método que queremos testar
-    renderer._create_image_clip(image_element)
+        renderer = Renderer(project_with_image)
+        image_element = project_with_image.elements[0]
+        
+        renderer._create_image_clip(image_element)
 
-    # 1. Verifica se ImageClip foi chamado com o caminho correto
-    mock_mp.ImageClip.assert_called_once_with("logo.png")
+        mock_image_clip.assert_called_once_with("logo.png")
+        # MUDANÇA: .resize se torna .resized
+        mock_instance.resized.assert_called_once_with(width=200, height=100)
 
-    # 2. CORREÇÃO: Verifica se o método .resize foi chamado com a largura e altura corretas
-    #    que estão definidas na fixture (width=200, height=100).
-    mock_image_clip_instance.resize.assert_called_once_with(
-        width=image_element.width, 
-        height=image_element.height
-    )
+    # MUDANÇA: Patch direto na classe que queremos simular
+    @patch('video_renderer.renderer.VideoFileClip')
+    def test_create_video_clip_calls_moviepy_correctly(self, mock_video_clip, project_with_video):
+        """Testa a criação de um clipe de vídeo com volume e resize."""
+        mock_instance = MagicMock()
+        mock_instance.volumex.return_value = mock_instance
+        mock_video_clip.return_value = mock_instance
+
+        renderer = Renderer(project_with_video)
+        video_element = project_with_video.elements[0]
+
+        renderer._create_video_clip(video_element)
+
+        mock_video_clip.assert_called_once_with("trailer.mp4")
+        mock_instance.volumex.assert_called_once_with(0.7)
+        # MUDANÇA: .resize se torna .resized
+        mock_instance.resized.assert_called_once_with(width=1280, height=720)
