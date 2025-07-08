@@ -1,10 +1,10 @@
 from __future__ import annotations
-from video_model.models import Project, BaseElement, ImageElement, VideoElement, RectangleElement
+from video_model.models import Project, BaseElement, ImageElement, VideoElement, RectangleElement, TextElement
 from .filters import FILTER_REGISTRY
 
 # Importamos as classes diretamente do pacote principal, como você descobriu.
 from moviepy import (
-    ImageClip, VideoFileClip, ColorClip, CompositeVideoClip
+    ImageClip, VideoFileClip, ColorClip, CompositeVideoClip, TextClip
 )
 
 class Renderer:
@@ -16,12 +16,13 @@ class Renderer:
         # TODO: Implementar a lógica de composição completa
         pass
 
-    def _create_clip_for_element(self, element: BaseElement) -> "VideoFileClip | ImageClip | ColorClip":
+    def _create_clip_for_element(self, element: BaseElement) -> "VideoFileClip | ImageClip | ColorClip | TextClip":
         """Fábrica de clipes que despacha para o método de criação correto."""
         creation_methods = {
             "image": self._create_image_clip,
             "video": self._create_video_clip,
-            "rectangle": self._create_rectangle_clip,
+            "rectangle": self._create_rectangle_clip,            
+            "text": self._create_text_clip,
         }
         method = creation_methods.get(element.type)
         if not method:
@@ -55,4 +56,23 @@ class Renderer:
         return ColorClip(
             size=(int(element.width), int(element.height)),
             color=element.color
+        )
+
+    def _create_text_clip(self, element: TextElement) -> "TextClip":
+        """Cria um TextClip a partir de um TextElement."""
+        # MoviePy espera que os parâmetros da fonte estejam em um formato específico.
+        # Nós extraímos os valores do dicionário 'font' do nosso modelo.
+        font_details = element.font
+        
+        # O TextClip espera que a cor seja passada sem o '#', mas aceita nomes de cores.
+        # Nós removemos o '#' se ele existir.
+        color = font_details.get("color", "white").lstrip('#')
+
+        return TextClip(
+            txt=element.text,
+            font=font_details.get("path"),
+            fontsize=font_details.get("size", 24),
+            color=color,
+            stroke_color=font_details.get("stroke", {}).get("color"),
+            stroke_width=font_details.get("stroke", {}).get("width", 0),
         )
