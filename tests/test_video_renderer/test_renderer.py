@@ -83,3 +83,50 @@ class TestRenderer:
             stroke_color="black",
             stroke_width=2
         )
+    
+    @patch('video_renderer.renderer.CompositeVideoClip')
+    @patch('video_renderer.renderer.ColorClip')
+    def test_render_video_orchestrates_correctly(self, mock_color_clip, mock_composite_clip, project_with_video):
+        """
+        Testa se render_video orquestra a criação do canvas, elementos e composição final.
+        """
+        # Prepara os mocks
+        mock_canvas_instance = MagicMock()
+        mock_color_clip.return_value = mock_canvas_instance
+
+        # --- A LINHA DA CORREÇÃO ESTÁ AQUI ---
+        # Dizemos ao mock do canvas para ter um atributo 'size' com o valor correto.
+        mock_canvas_instance.size = (project_with_video.width, project_with_video.height)
+
+        mock_final_clip_instance = MagicMock()
+        mock_composite_clip.return_value = mock_final_clip_instance
+        
+        renderer = Renderer(project_with_video)
+        
+        # Mock para o método interno para não re-testar a criação de clipes
+        mock_element_clip = MagicMock()
+        renderer._create_clip_for_element = MagicMock(return_value=mock_element_clip)
+
+        # Executa o método principal
+        renderer.render_video("output.mp4", fps=30)
+
+        # 1. Verifica se o canvas foi criado com os parâmetros corretos
+        mock_color_clip.assert_called_once_with(
+            size=(project_with_video.width, project_with_video.height),
+            color=project_with_video.background_color,
+            duration=project_with_video.duration
+        )
+
+        # 2. Verifica se a criação de clipes foi chamada para o nosso elemento
+        renderer._create_clip_for_element.assert_called_once_with(project_with_video.elements[0])
+        
+        # 3. Verifica se a composição final foi criada com o canvas e o clipe do elemento
+        mock_composite_clip.assert_called_once_with(
+            [mock_canvas_instance, mock_element_clip],
+            size=(project_with_video.width, project_with_video.height)
+        )
+
+        # 4. Verifica se o arquivo final foi escrito
+        mock_final_clip_instance.write_videofile.assert_called_once_with(
+            "output.mp4", fps=30, codec='libx264'
+        )
