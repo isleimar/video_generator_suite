@@ -1,0 +1,12 @@
+# Para parsing do YAML
+pyyaml
+
+# Para avaliação segura de expressões
+asteval
+
+# Para renderização de vídeo
+moviepy
+
+# Para testes
+pytest
+pytest-mock

@@ -39,6 +39,7 @@ profiles/*
 *.mp4
 *.srt
 *.txt
+!requirements.txt
 
 # Arquivos de backup de editores
 *.bak
