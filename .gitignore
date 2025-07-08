@@ -1,0 +1,58 @@
+
+# Bytecode e cache Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.log
+
+# Arquivos temporários do sistema
+*.swp
+*.swo
+*.DS_Store
+*.bak
+*.tmp
+*~
+
+# Ambiente virtual (caso usado)
+.venv/
+.env
+.env.*
+!.env.example
+
+# Arquivos de saída do projeto
+outputs/
+tmp/
+logs/
+
+# Ignore todos os perfis reais, exceto o de exemplo
+profiles/*
+!profiles/example.yaml
+
+# Arquivos de banco de dados temporários
+*.db
+*.sqlite
+*.sqlite3
+
+# Arquivos gerados por execução
+*.wav
+*.mp4
+*.srt
+*.txt
+
+# Arquivos de backup de editores
+*.bak
+*~
+
+# Ignore modelos ou artefatos de containers
+*.pt
+*.onnx
+*.bin
+*.ckpt
+
+# Jupyter (caso use em testes)
+.ipynb_checkpoints/
+
+# IDEs
+.vscode/
+.idea/
