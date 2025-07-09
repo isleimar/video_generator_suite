@@ -121,5 +121,5 @@ class Renderer:
         """Cria um AudioFileClip a partir de um AudioElement."""
         clip = AudioFileClip(element.path)
         if element.volume != 1.0:
-            clip = clip.volumex(element.volume)
+            clip = clip.with_volume_scaled(element.volume)
         return clip

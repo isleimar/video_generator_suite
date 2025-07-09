@@ -60,12 +60,12 @@ class TestRenderer:
     @patch('video_renderer.renderer.VideoFileClip')
     def test_create_video_clip(self, mock_clip, project_with_video):
         mock_instance = MagicMock()
-        mock_instance.volumex.return_value = mock_instance
+        mock_instance.with_volume_scaled.return_value = mock_instance
         mock_clip.return_value = mock_instance
         renderer = Renderer(project_with_video)
         renderer._create_video_clip(project_with_video.elements[0])
         mock_clip.assert_called_once_with("trailer.mp4")
-        mock_instance.volumex.assert_called_once_with(0.7)
+        mock_instance.with_volume_scaled.assert_called_once_with(0.7)
         mock_instance.resized.assert_called_once_with(width=1280, height=720)
 
     @patch('video_renderer.renderer.ColorClip')
@@ -90,7 +90,7 @@ class TestRenderer:
         renderer = Renderer(project_with_audio)
         renderer._create_audio_clip(project_with_audio.elements[0])
         mock_clip.assert_called_once_with("music.mp3")
-        mock_instance.volumex.assert_called_once_with(0.5)
+        mock_instance.with_volume_scaled.assert_called_once_with(0.5)
 
     # MUDANÇA: Removemos o patch de BaseVideoClip e o argumento do teste
     @patch('video_renderer.renderer.CompositeVideoClip')
