@@ -87,7 +87,7 @@ class Renderer:
     def _create_video_clip(self, element: VideoElement) -> "VideoFileClip":
         clip = VideoFileClip(element.path)
         if element.volume != 1.0:
-            clip = clip.volumex(element.volume)
+            clip = clip.with_volume_scaled(element.volume)
         if element.width is not None or element.height is not None:
             clip = clip.resized(width=element.width, height=element.height)
         return clip
@@ -100,12 +100,22 @@ class Renderer:
     def _create_text_clip(self, element: TextElement) -> "TextClip":
         font_details = element.font
         color = font_details.get("color", "white")
-        return TextClip(
-            text=element.text, font=font_details.get("path"),
-            font_size=font_details.get("size", 24), color=color,
-            stroke_color=font_details.get("stroke", {}).get("color"),
-            stroke_width=font_details.get("stroke", {}).get("width", 0),
-        )
+        clip_kwargs = {
+            "text": element.text,
+            "font": font_details.get("path"),
+            "font_size": font_details.get("size", 24),
+            "color": color,
+            "stroke_color": font_details.get("stroke", {}).get("color"),
+            "stroke_width": font_details.get("stroke", {}).get("width", 0),
+        }
+        # Se uma largura foi definida no YAML, ativamos o modo 'caption'
+        if element.width is not None:
+            clip_kwargs['method'] = 'caption'
+            # A altura pode ser None para que o MoviePy a calcule automaticamente
+            size_w = int(element.width)
+            size_h = int(element.height) if element.height is not None else None
+            clip_kwargs['size'] = (size_w, size_h) 
+        return TextClip(**clip_kwargs)
     
     def _create_audio_clip(self, element: AudioElement) -> "AudioFileClip":
         """Cria um AudioFileClip a partir de um AudioElement."""
