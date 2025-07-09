@@ -1,3 +1,10 @@
+*.egg-info
+
+#Assets
+assets/
+
+#Output
+output/
 
 # Coverage reports
 .coverage

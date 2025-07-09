@@ -1,4 +1,5 @@
 from __future__ import annotations
+from utils.color import hex_to_rgb
 from video_model.models import (
     Project, BaseElement, ImageElement, VideoElement, RectangleElement, 
     TextElement, AudioElement, SubtitleElement
@@ -18,10 +19,10 @@ class Renderer:
 
     def render_video(self, output_path: str, fps: int = 24):
         """Renderiza o projeto resolvido, compondo todos os elementos."""
-        
+        rgb_background = hex_to_rgb(self.project.background_color)
         canvas = ColorClip(
             size=(int(self.project.width), int(self.project.height)),
-            color=self.project.background_color,
+            color=rgb_background,
             duration=self.project.duration
         )
         

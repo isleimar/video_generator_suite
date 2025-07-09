@@ -1,3 +1,13 @@
+[project]
+name = "video_generator_suite"
+version = "0.1.0"
+description = "Uma suíte para geração de vídeo a partir de YAML."
+readme = "README.md"
+requires-python = ">=3.8"
+
+[tool.setuptools.packages.find]
+where = ["packages"]
+
 [tool.pytest.ini_options]
 pythonpath = [
   "packages"

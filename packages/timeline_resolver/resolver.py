@@ -1,5 +1,6 @@
 import re
 import copy
+import logging
 from graphlib import TopologicalSorter, CycleError
 from typing import Dict, Any, List, Set, Tuple
 
@@ -15,6 +16,8 @@ class CircularDependencyError(ResolverError):
 class AttributeReferenceError(ResolverError):
     pass
 
+log = logging.getLogger(__name__)
+
 class Resolver:
     def __init__(self, project: Project):
         if not isinstance(project, Project):
@@ -27,8 +30,13 @@ class Resolver:
         self.ref_pattern = re.compile(r'([a-zA-Z_][a-zA-Z_0-9]*\.[a-zA-Z_][a-zA-Z_0-9]*)')
 
     def resolve(self) -> Project:
+        """Orquestra o processo completo de resolução da timeline."""
+        log.info("Iniciando resolução de dependências...")
         self._build_dependency_graph()
+        log.debug("Grafo de dependências construído.")
+        log.info("Calculando valores dinâmicos...")
         self._calculate_resolved_values()
+        log.info("Resolução da timeline concluída.")
         return self.resolved_project
 
     def _get_node_name(self, owner_name: str, attr: str) -> str:

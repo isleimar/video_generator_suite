@@ -1,6 +1,8 @@
 import pytest
 from unittest.mock import MagicMock, patch
 
+from utils.color import hex_to_rgb
+
 from video_model.models import (
     Project, ImageElement, VideoElement, RectangleElement, TextElement, AudioElement
 )
@@ -116,9 +118,10 @@ class TestRenderer:
         renderer.render_video("output.mp4", fps=30)
 
         # 1. Verifica se o canvas foi criado corretamente
+        expected_rgb_color = hex_to_rgb(project_with_video.background_color)
         mock_color_clip.assert_called_once_with(
             size=(project_with_video.width, project_with_video.height),
-            color=project_with_video.background_color,
+            color=expected_rgb_color,
             duration=project_with_video.duration
         )
 
