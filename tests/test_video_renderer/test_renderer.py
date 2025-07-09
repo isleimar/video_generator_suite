@@ -79,8 +79,8 @@ class TestRenderer:
         renderer = Renderer(project_with_text)
         renderer._create_text_clip(project_with_text.elements[0])
         mock_clip.assert_called_once_with(
-            txt="Hello World", font="Arial.ttf", fontsize=72,
-            color="FFFFFF", stroke_color=None, stroke_width=0
+            text="Hello World", font="Arial.ttf", font_size=72,
+            color="#FFFFFF", stroke_color=None, stroke_width=0
         )
 
     @patch('video_renderer.renderer.AudioFileClip')

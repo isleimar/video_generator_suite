@@ -43,7 +43,7 @@ class Renderer:
         if audio_clips:
             # CORREÇÃO: Usamos CompositeAudioClip diretamente
             final_audio = CompositeAudioClip(audio_clips)
-            final_video.audio = final_audio.set_duration(final_video.duration)
+            final_video.audio = final_audio.with_duration(final_video.duration)
 
         final_video.write_videofile(output_path, fps=fps, codec='libx264')
 
@@ -63,14 +63,14 @@ class Renderer:
         
         # Define a duração. Para áudio, isso é importante na composição.
         duration = element.end - element.start if element.end is not None else (clip.duration or self.project.duration)
-        clip = clip.set_duration(duration)
-        clip = clip.set_start(element.start)
+        clip = clip.with_duration(duration)
+        clip = clip.with_start(element.start)
 
         # Propriedades visuais não se aplicam ao áudio
         if isinstance(clip, BaseVideoClip):
-             clip = clip.set_position((element.x, element.y))
+             clip = clip.with_position((element.x, element.y))
              if element.opacity < 1.0:
-                 clip = clip.set_opacity(element.opacity)
+                 clip = clip.with_opacity(element.opacity)
              if element.rotation != 0:
                  clip = clip.rotate(element.rotation)
         
@@ -99,10 +99,10 @@ class Renderer:
 
     def _create_text_clip(self, element: TextElement) -> "TextClip":
         font_details = element.font
-        color = font_details.get("color", "white").lstrip('#')
+        color = font_details.get("color", "white")
         return TextClip(
-            txt=element.text, font=font_details.get("path"),
-            fontsize=font_details.get("size", 24), color=color,
+            text=element.text, font=font_details.get("path"),
+            font_size=font_details.get("size", 24), color=color,
             stroke_color=font_details.get("stroke", {}).get("color"),
             stroke_width=font_details.get("stroke", {}).get("width", 0),
         )
