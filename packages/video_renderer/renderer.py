@@ -9,9 +9,10 @@ from .filters import FILTER_REGISTRY
 # --- CORREÇÃO: Importamos todas as classes que vamos usar diretamente ---
 from moviepy import (
     ImageClip, VideoFileClip, ColorClip, CompositeVideoClip, TextClip,
-    AudioFileClip, CompositeAudioClip, clips_array
+    AudioFileClip, CompositeAudioClip
 )
 from moviepy.video.VideoClip import VideoClip as BaseVideoClip # Usado para type hints
+from moviepy.video.fx import Loop as Loop_fx
 
 class Renderer:
     def __init__(self, resolved_project: Project):
@@ -60,10 +61,46 @@ class Renderer:
             raise NotImplementedError(f"Criação para o tipo '{element.type}' não foi implementada.")
             
         clip = method(element)
+
+        is_looping = getattr(element, 'loop', False)
+        has_end = element.end is not None
+        clip_natural_duration = clip.duration or 0
+
+        final_duration = 0
+
+        if is_looping:
+            if has_end:
+                # REGRA 4: Loop com 'end' definido
+                element_duration = element.end - element.start
+                max_possible_duration = self.project.duration - element.start
+                final_duration = min(element_duration, max_possible_duration)
+            else:
+                # REGRA 3: Loop sem 'end' definido
+                final_duration = self.project.duration - element.start
+            
+            # Aplica o efeito de loop se necessário
+            clip = Loop_fx().apply(clip).with_duration(final_duration)
+        else: # not is_looping
+            if has_end:
+                # REGRA 2: Sem loop, com 'end' definido
+                element_duration = element.end - element.start
+                # A duração é a definida pelo elemento, mas não pode ser maior que a do clipe original
+                final_duration = min(element_duration, clip_natural_duration)
+            else:
+                # REGRA 1: Sem loop, sem 'end' definido (duração padrão)
+                final_duration = clip_natural_duration
+            
+            clip = clip.with_duration(final_duration)
+
+
         
-        # Define a duração. Para áudio, isso é importante na composição.
-        duration = element.end - element.start if element.end is not None else (clip.duration or self.project.duration)
-        clip = clip.with_duration(duration)
+        # # Define a duração. Para áudio, isso é importante na composição.
+        # duration = element.end - element.start if element.end is not None else (clip.duration or self.project.duration)
+        # if getattr(element, 'loop', False) and duration > clip.duration:
+        #     clip = Loop_fx().apply(clip).with_duration(duration)
+        # else:
+        #     clip = clip.with_duration(duration)
+
         clip = clip.with_start(element.start)
 
         # Propriedades visuais não se aplicam ao áudio
