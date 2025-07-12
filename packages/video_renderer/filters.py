@@ -1,9 +1,24 @@
-def apply_fade(clip, **kwargs):
+from moviepy.video import fx as vfx
+from moviepy.audio import fx as afx
+
+def apply_fade(clip, duration_in=0, duration_out=0, **kwargs):
     """
-    Aplica um efeito de fade in/out a um clipe do MoviePy.
-    # TODO: Implementar a lógica de fade usando moviepy.fx.all.fadein/fadeout
+    Aplica efeitos de fade in e/ou fade out a um clipe.
+    Funciona tanto para clipes de vídeo quanto de áudio.
     """
-    print(f"Aplicando filtro FADE ao clipe com os parâmetros: {kwargs}")
+    # Aplica fade in se uma duração for fornecida
+    if duration_in > 0:
+        # A biblioteca diferencia entre fade de áudio e de vídeo
+        if hasattr(clip, 'audio') and clip.audio is not None:
+            clip.audio = afx.AudioFadeIn(duration_in).apply(clip.audio)
+        clip = vfx.FadeIn(duration_in).apply(clip)
+
+    # Aplica fade out se uma duração for fornecida
+    if duration_out > 0:
+        if hasattr(clip, 'audio') and clip.audio is not None:
+            clip.audio = afx.AudioFadeOut(duration_out).apply(clip.audio)
+        clip = vfx.FadeOut(duration_out).apply(clip)
+            
     return clip
 
 # Registro de filtros disponíveis

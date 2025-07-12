@@ -91,16 +91,9 @@ class Renderer:
                 final_duration = clip_natural_duration
             
             clip = clip.with_duration(final_duration)
-
-
         
         # # Define a duração. Para áudio, isso é importante na composição.
         # duration = element.end - element.start if element.end is not None else (clip.duration or self.project.duration)
-        # if getattr(element, 'loop', False) and duration > clip.duration:
-        #     clip = Loop_fx().apply(clip).with_duration(duration)
-        # else:
-        #     clip = clip.with_duration(duration)
-
         clip = clip.with_start(element.start)
 
         # Propriedades visuais não se aplicam ao áudio
@@ -111,8 +104,13 @@ class Renderer:
              if element.rotation != 0:
                  clip = clip.rotate(element.rotation)
         
-        # TODO: Implementar a lógica de filtros
-        
+        for filt in element.filters:
+            filter_func = FILTER_REGISTRY.get(filt.get("type"))
+            if filter_func:
+                # Passa todos os parâmetros do filtro (ex: duration_in) para a função
+                filter_params = {k: v for k, v in filt.items() if k != "type"}
+                clip = filter_func(clip, **filter_params)
+                        
         return clip
 
     def _create_image_clip(self, element: ImageElement) -> "ImageClip":

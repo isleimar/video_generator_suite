@@ -177,3 +177,30 @@ class TestRenderer:
         mock_loop_instance.apply.assert_called_once_with(mock_clip_instance)
         # Assert que .with_duration() foi chamado no clipe retornado por .apply()
         mock_clip_instance.with_duration.assert_called_once_with(20)
+    
+    @patch('video_renderer.renderer.FILTER_REGISTRY')
+    @patch('video_renderer.renderer.ImageClip')
+    def test_filter_application(self, mock_image_clip, mock_filter_registry, project_with_image):
+        """Testa se a lógica de aplicação de filtros é chamada corretamente."""
+        # 1. Setup
+        # Adiciona a especificação de filtro ao nosso elemento de imagem
+        image_element = project_with_image.elements[0]
+        image_element.filters = [{"type": "fade", "duration_in": 2.0}]
+        
+        mock_clip_instance = MagicMock()
+        mock_image_clip.return_value = mock_clip_instance
+        
+        # Simulamos a função de fade para que possamos espioná-la
+        mock_fade_func = MagicMock(return_value=mock_clip_instance)
+        mock_filter_registry.get.return_value = mock_fade_func
+        
+        renderer = Renderer(project_with_image)
+
+        # 2. Action
+        renderer._create_clip_for_element(image_element)
+
+        # 3. Assert
+        # Verifica se o registro de filtros foi consultado
+        mock_filter_registry.get.assert_called_once_with("fade")
+        # Verifica se a função de fade foi chamada com o clipe e os parâmetros corretos
+        mock_fade_func.assert_called_once_with(mock_clip_instance, duration_in=2.0)
