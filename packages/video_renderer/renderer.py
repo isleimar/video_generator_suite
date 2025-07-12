@@ -64,7 +64,7 @@ class Renderer:
 
         is_looping = getattr(element, 'loop', False)
         has_end = element.end is not None
-        clip_natural_duration = clip.duration or 0
+        clip_natural_duration = clip.duration 
 
         final_duration = 0
 
@@ -84,8 +84,8 @@ class Renderer:
             if has_end:
                 # REGRA 2: Sem loop, com 'end' definido
                 element_duration = element.end - element.start
-                # A duração é a definida pelo elemento, mas não pode ser maior que a do clipe original
-                final_duration = min(element_duration, clip_natural_duration)
+                # A duração é a definida pelo elemento, mas não pode ser maior que a do clipe original                
+                final_duration =  element_duration if clip_natural_duration is None else  min(element_duration, clip_natural_duration)
             else:
                 # REGRA 1: Sem loop, sem 'end' definido (duração padrão)
                 final_duration = clip_natural_duration
@@ -116,17 +116,25 @@ class Renderer:
         return clip
 
     def _create_image_clip(self, element: ImageElement) -> "ImageClip":
-        clip = ImageClip(element.path)
-        if element.width is not None or element.height is not None:
-            clip = clip.resized(width=element.width, height=element.height)
+        clip = ImageClip(element.path)        
+        if element.width is not None and element.height is not None:
+            clip = clip.resized((int(element.width), int(element.height)))        
+        elif element.width is not None:
+            clip = clip.resized(width=int(element.width))        
+        elif element.height is not None:
+            clip = clip.resized(height=int(element.height))
         return clip
 
     def _create_video_clip(self, element: VideoElement) -> "VideoFileClip":
         clip = VideoFileClip(element.path)
         if element.volume != 1.0:
             clip = clip.with_volume_scaled(element.volume)
-        if element.width is not None or element.height is not None:
-            clip = clip.resized(width=element.width, height=element.height)
+        if element.width is not None and element.height is not None:
+            clip = clip.resized((int(element.width), int(element.height)))
+        elif element.width is not None:
+            clip = clip.resized(width=int(element.width))
+        elif element.height is not None:
+            clip = clip.resized(height=int(element.height))
         return clip
 
     def _create_rectangle_clip(self, element: RectangleElement) -> "ColorClip":

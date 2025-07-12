@@ -64,7 +64,7 @@ class TestRenderer:
         renderer = Renderer(project_with_image)
         renderer._create_image_clip(project_with_image.elements[0])
         mock_clip.assert_called_once_with("logo.png")
-        mock_instance.resized.assert_called_once_with(width=200, height=100)
+        mock_instance.resized.assert_called_once_with((200, 100))
 
     @patch('video_renderer.renderer.VideoFileClip')
     def test_create_video_clip(self, mock_clip, project_with_video):
@@ -75,7 +75,7 @@ class TestRenderer:
         renderer._create_video_clip(project_with_video.elements[0])
         mock_clip.assert_called_once_with("trailer.mp4")
         mock_instance.with_volume_scaled.assert_called_once_with(0.7)
-        mock_instance.resized.assert_called_once_with(width=1280, height=720)
+        mock_instance.resized.assert_called_once_with((1280, 720))
 
     @patch('video_renderer.renderer.ColorClip')
     def test_create_rectangle_clip(self, mock_clip, project_with_rectangle):
