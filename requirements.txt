@@ -11,3 +11,6 @@ moviepy
 pytest
 pytest-mock
 pytest-cov
+
+#CV2
+opencv-python
