@@ -179,9 +179,9 @@ class SubtitleGenerator:
 
         altura_total_real = sum(alturas_das_linhas)
 
-        if self.posicao_legenda == 'superior':
+        if self.posicao_legenda == 'top':
             y_cursor = self.margem_vertical
-        elif self.posicao_legenda == 'central':
+        elif self.posicao_legenda == 'center':
             y_cursor = (altura_video / 2) - (altura_total_real / 2) + self.margem_vertical
         else:
             y_cursor = altura_video - altura_total_real - self.margem_vertical

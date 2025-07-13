@@ -96,7 +96,7 @@ class Resolver:
             attrs_to_check = [
                 'start', 'end', 'x', 'y', 'width', 'height', 
                 'opacity', 'rotation', 'media_duration', 
-                'media_width', 'media_height'
+                'media_width', 'media_height', 'max_width'
             ]            
             for attr in attrs_to_check:
                 attributes_to_scan.append((el_name, element, attr))
