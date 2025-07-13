@@ -46,7 +46,7 @@ class Renderer:
             final_audio = CompositeAudioClip(audio_clips)
             final_video.audio = final_audio.with_duration(final_video.duration)
 
-        final_video.write_videofile(output_path, fps=fps, codec='libx264')
+        final_video.write_videofile(output_path, fps=fps, codec='libx264', temp_audiofile_path='tmp/')
 
     # CORREÇÃO: A anotação de tipo usa a união das classes reais
     def _create_clip_for_element(self, element: BaseElement) -> "BaseVideoClip | AudioFileClip":
