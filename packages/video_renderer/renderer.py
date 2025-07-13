@@ -13,6 +13,7 @@ from moviepy import (
 )
 from moviepy.video.VideoClip import VideoClip as BaseVideoClip # Usado para type hints
 from moviepy.video.fx import Loop as Loop_fx
+from moviepy.video.fx import Rotate
 
 class Renderer:
     def __init__(self, resolved_project: Project):
@@ -102,7 +103,7 @@ class Renderer:
              if element.opacity < 1.0:
                  clip = clip.with_opacity(element.opacity)
              if element.rotation != 0:
-                 clip = clip.rotate(element.rotation)
+                 clip = Rotate(element.rotation).apply(clip)
         
         for filt in element.filters:
             filter_func = FILTER_REGISTRY.get(filt.get("type"))
