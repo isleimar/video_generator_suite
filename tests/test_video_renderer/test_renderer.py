@@ -145,7 +145,7 @@ class TestRenderer:
 
         # 4. Verifica se o arquivo final foi escrito
         mock_final_clip.write_videofile.assert_called_once_with(
-            "output.mp4", fps=30, codec='libx264'
+            "output.mp4", fps=30, codec='libx264', temp_audiofile_path='tmp/'
         )
     
     @patch('video_renderer.renderer.Loop_fx')
@@ -182,25 +182,32 @@ class TestRenderer:
     @patch('video_renderer.renderer.ImageClip')
     def test_filter_application(self, mock_image_clip, mock_filter_registry, project_with_image):
         """Testa se a lógica de aplicação de filtros é chamada corretamente."""
-        # 1. Setup
-        # Adiciona a especificação de filtro ao nosso elemento de imagem
+                
+        # 1. Primeiro, modificamos os dados de teste
         image_element = project_with_image.elements[0]
         image_element.filters = [{"type": "fade", "duration_in": 2.0}]
         
+        # 2. Preparamos os mocks
         mock_clip_instance = MagicMock()
         mock_image_clip.return_value = mock_clip_instance
         
-        # Simulamos a função de fade para que possamos espioná-la
+        # Garante que as chamadas de método em cadeia retornem o mesmo mock
+        mock_clip_instance.with_duration.return_value = mock_clip_instance
+        mock_clip_instance.with_start.return_value = mock_clip_instance
+        mock_clip_instance.with_position.return_value = mock_clip_instance
+        mock_clip_instance.with_opacity.return_value = mock_clip_instance
+        mock_clip_instance.rotate.return_value = mock_clip_instance
+        mock_clip_instance.resized.return_value = mock_clip_instance
+
         mock_fade_func = MagicMock(return_value=mock_clip_instance)
         mock_filter_registry.get.return_value = mock_fade_func
         
+        # 3. SÓ AGORA criamos o Renderer, com os dados já modificados
         renderer = Renderer(project_with_image)
 
-        # 2. Action
+        # 4. Executamos a ação
         renderer._create_clip_for_element(image_element)
 
-        # 3. Assert
-        # Verifica se o registro de filtros foi consultado
+        # 5. Verificamos o resultado
         mock_filter_registry.get.assert_called_once_with("fade")
-        # Verifica se a função de fade foi chamada com o clipe e os parâmetros corretos
         mock_fade_func.assert_called_once_with(mock_clip_instance, duration_in=2.0)
