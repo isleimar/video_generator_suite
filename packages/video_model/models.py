@@ -20,6 +20,9 @@ class BaseElement:
     y: DynamicValue = 0
     width: DynamicValue = None
     height: DynamicValue = None
+    media_duration: DynamicValue = None
+    media_width: DynamicValue = None
+    media_height: DynamicValue = None
     opacity: DynamicValue = 1.0
     rotation: DynamicValue = 0
     filters: List[Dict[str, Any]] = field(default_factory=list)

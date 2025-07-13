@@ -7,14 +7,11 @@ from typing import Dict, Any, List, Set, Tuple
 from video_model.models import Project, BaseElement
 from safe_expr_eval.evaluator import evaluate, InvalidExpressionError
 
-class ResolverError(Exception):
-    pass
+from moviepy import ImageClip, VideoFileClip, AudioFileClip
 
-class CircularDependencyError(ResolverError):
-    pass
-
-class AttributeReferenceError(ResolverError):
-    pass
+class ResolverError(Exception): pass
+class CircularDependencyError(ResolverError): pass
+class AttributeReferenceError(ResolverError): pass
 
 log = logging.getLogger(__name__)
 
@@ -31,6 +28,8 @@ class Resolver:
 
     def resolve(self) -> Project:
         """Orquestra o processo completo de resolução da timeline."""
+        log.info("Iniciando resolução de hidratação...")
+        self._hydrate_missing_attributes()
         log.info("Iniciando resolução de dependências...")
         self._build_dependency_graph()
         log.debug("Grafo de dependências construído.")
@@ -41,6 +40,52 @@ class Resolver:
 
     def _get_node_name(self, owner_name: str, attr: str) -> str:
         return f"{owner_name}.{attr}"
+    
+    def _hydrate_missing_attributes(self):
+        """
+        Pré-analisa os elementos de mídia e preenche width, height e media_duration
+        se eles não estiverem definidos no YAML.
+        """
+        log.info("Hidratando projeto: lendo metadados de arquivos de mídia...")
+        for element in self.resolved_project.elements:
+            if not hasattr(element, 'path') or not element.path:
+                continue
+
+            try:
+                clip = None
+                if element.type == 'video':
+                    clip = VideoFileClip(element.path)
+                elif element.type == 'image':
+                    clip = ImageClip(element.path)
+                elif element.type == 'audio':
+                    clip = AudioFileClip(element.path)
+                
+                if not clip:
+                    continue
+
+                if hasattr(clip, 'size'):                    
+                    element.media_width = clip.size[0]
+                    element.media_height = clip.size[1]
+                    log.debug(f"  > Elemento '{element.name}': 'media_width' e 'media_height' hidratados para {clip.size}")
+                
+                if hasattr(element, 'width') and element.width is None and hasattr(clip, 'size'):
+                    element.width = clip.size[0]
+                    log.debug(f"  > Elemento '{element.name}': 'width' hidratado para {element.width}px")
+                
+                if hasattr(element, 'height') and element.height is None and hasattr(clip, 'size'):
+                    element.height = clip.size[1]
+                    log.debug(f"  > Elemento '{element.name}': 'height' hidratado para {element.height}px")
+                
+                if hasattr(element, 'media_duration') and element.media_duration is None and hasattr(clip, 'duration'):
+                    element.media_duration = clip.duration
+                    log.debug(f"  > Elemento '{element.name}': 'media_duration' hidratado para {element.media_duration}s")
+                
+                if hasattr(clip, 'close'):
+                    clip.close()
+                    
+            except Exception as e:
+                log.warning(f"Não foi possível ler metadados do arquivo {element.path}: {e}")
+        log.info("Hidratação do projeto concluída.")
 
     def _build_dependency_graph(self):        
         all_elements = {el.name: el for el in self.resolved_project.elements if el.name}
@@ -48,7 +93,12 @@ class Resolver:
         for attr in ['width', 'height', 'duration']:
             attributes_to_scan.append(('video', self.resolved_project, attr))
         for el_name, element in all_elements.items():
-            for attr in ['start', 'end', 'x', 'y', 'width', 'height', 'opacity', 'rotation']:
+            attrs_to_check = [
+                'start', 'end', 'x', 'y', 'width', 'height', 
+                'opacity', 'rotation', 'media_duration', 
+                'media_width', 'media_height'
+            ]            
+            for attr in attrs_to_check:
                 attributes_to_scan.append((el_name, element, attr))
 
         for owner_name, owner_obj, attr in attributes_to_scan:
