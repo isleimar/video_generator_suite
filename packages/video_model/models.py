@@ -64,6 +64,14 @@ class SubtitleElement(BaseElement):
     path: str    
     type: str = field(default="subtitles", init=False)
     font: Dict[str, Any] = field(default_factory=dict)
+    position: str = "bottom"
+    margin_v: int = 60
+    max_lines: int = 2
+    max_words: int = 8
+    max_width: int = 100
+    line_spacing_factor: float = 1.0
+    timing: Dict[str, Any] = field(default_factory=dict)
+    word_background: Dict[str, Any] = field(default_factory=dict)
 
 @dataclass
 class Project:

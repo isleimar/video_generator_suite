@@ -5,8 +5,8 @@ from video_model.models import (
     TextElement, AudioElement, SubtitleElement
 )
 from .filters import FILTER_REGISTRY
+import logging
 
-# --- CORREÇÃO: Importamos todas as classes que vamos usar diretamente ---
 from moviepy import (
     ImageClip, VideoFileClip, ColorClip, CompositeVideoClip, TextClip,
     AudioFileClip, CompositeAudioClip
@@ -14,6 +14,8 @@ from moviepy import (
 from moviepy.video.VideoClip import VideoClip as BaseVideoClip # Usado para type hints
 from moviepy.video.fx import Loop as Loop_fx
 from moviepy.video.fx import Rotate
+
+from .subtitle_generator import SubtitleGenerator
 
 class Renderer:
     def __init__(self, resolved_project: Project):
@@ -32,20 +34,35 @@ class Renderer:
         audio_clips = []
         
         for element in self.project.elements:
+            # Ignoramos os tipos 'audio' e 'subtitles' neste laço,
+            # pois eles são tratados de forma especial mais tarde.
+            if element.type in ['audio', 'subtitles']:
+                continue            
             clip = self._create_clip_for_element(element)
+            video_clips.append(clip)
             
-            # CORREÇÃO: Usamos isinstance com as classes importadas diretamente
-            if isinstance(clip, BaseVideoClip):
-                video_clips.append(clip)
-            elif isinstance(clip, AudioFileClip):
-                audio_clips.append(clip)
-            
-        final_video = CompositeVideoClip([canvas] + video_clips, size=canvas.size)
+        final_video = CompositeVideoClip([canvas] + video_clips, size=canvas.size)        
         
+        # Pega todos os elementos de áudio para compor
+        audio_elements = [el for el in self.project.elements if el.type == 'audio']
+        for element in audio_elements:
+            clip = self._create_clip_for_element(element)
+            audio_clips.append(clip)
+
         if audio_clips:
-            # CORREÇÃO: Usamos CompositeAudioClip diretamente
             final_audio = CompositeAudioClip(audio_clips)
             final_video.audio = final_audio.with_duration(final_video.duration)
+        
+        # Após compor o vídeo, procuramos por elementos de legenda para aplicar
+        subtitle_elements = [el for el in self.project.elements if el.type == 'subtitles']
+        if subtitle_elements:
+            logging.info(f"Aplicando legenda do elemento '{subtitle_elements[0].name}'...")
+            subtitle_gen = SubtitleGenerator(
+                subtitle_elements[0], 
+                int(self.project.width), 
+                int(self.project.height)
+            )
+            final_video = subtitle_gen.apply_to_clip(final_video)
 
         final_video.write_videofile(output_path, fps=fps, codec='libx264', temp_audiofile_path='tmp/')
 
