@@ -4,6 +4,17 @@ version = "0.1.0"
 description = "Uma suíte para geração de vídeo a partir de YAML."
 readme = "README.md"
 requires-python = ">=3.8"
+dependencies = [
+    "pyyaml",
+    "asteval",
+    "moviepy>=2.0.0",
+    "numpy",
+    "opencv-python",
+    "Pillow"
+]
+
+[project.scripts]
+video-gen = "application.main:main"
 
 [tool.setuptools.packages.find]
 where = ["packages"]
